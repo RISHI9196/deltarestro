@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delta Restaurant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f8f8f8;
+            margin: 0;
+        }
+        header {
+            background: #d32f2f;
+            color: #fff;
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #ccc;
+            padding: 2rem;
+        }
+        h2, h3 {
+            color: #d32f2f;
+            animation: fadeIn 1s;
+        }
+        /* Menu */
+        .menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-in;
+        }
+        .item {
+            background: #f1f1f1;
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 1px 4px #eee;
+            transition: transform 0.3s, box-shadow 0.3s;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        .item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px #ccc;
+        }
+        .item img {
+            width: 100px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            transition: transform 0.3s;
+        }
+        .item img:hover {
+            transform: scale(1.1);
+        }
+        button {
+            transition: background 0.3s, transform 0.2s;
+            cursor: pointer;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button.qty {
+            padding: 0.2rem 0.5rem;
+            margin: 0 0.3rem;
+        }
+        .item button {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+        }
+        .item button:not(.unselect) {
+            background: #d32f2f;
+            color: #fff;
+        }
+        .item button.unselect {
+            background: #757575;
+            color: #fff;
+        }
+
+        /* Order Summary */
+        .order-summary {
+            background: #f9fbe7;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-in;
+        }
+        .order-summary ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .order-summary li {
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.5s;
+        }
+        .totals span, .totals strong {
+            display: block;
+            margin-bottom: 0.3rem;
+            animation: fadeIn 0.5s;
+        }
+        .payment-options button {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: #d32f2f;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        .payment-options button:hover {
+            background: #b71c1c;
+        }
+
+        /* QR Section */
+        .qr-section {
+            text-align: center;
+            margin-top: 2rem;
+            animation: fadeIn 1s ease-in;
+        }
+        .qr-section img {
+            width: 120px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+            .menu {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Delta Restaurant</h1>
+        <p>Scan QR code at your table to order!</p>
+    </header>
+    <div class="container">
+        <h2>Menu</h2>
+        <div class="menu" id="menu">
+            <!-- Menu items will be rendered here -->
+        </div>
+        <div class="order-summary" id="order-summary">
+            <h3>Your Order</h3>
+            <ul id="order-list"></ul>
+            <div class="totals" id="totals"></div>
+        </div>
+        <div class="qr-section">
+            <p>Scan this QR code to access the ordering page:</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://yourrestaurant.com/order" alt="QR Code">
+        </div>
+    </div>
+    <script>
+        // Extended menu data with more items
+        const menuItems = [
+            { id: 1, name: "Paneer Butter Masala", price: 250, img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80" },
+            { id: 2, name: "Chicken Biryani", price: 300, img: "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=400&q=80" },
+            { id: 3, name: "Veg Pizza", price: 200, img: "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&w=400&q=80" },
+            { id: 4, name: "Cold Coffee", price: 120, img: "https://images.unsplash.com/photo-1464306076886-debede6b2b24?auto=format&it=crop&w=400&q=80" },
+            { id: 5, name: "Chocolate Brownie", price: 150, img: "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=400&q=80" },
+            { id: 6, name: "Masala Dosa", price: 180, img: "https://images.unsplash.com/photo-1505250463726-0d238b6b09b0?auto=format&fit=crop&w=400&q=80" },
+            { id: 7, name: "Butter Naan", price: 60, img: "https://images.unsplash.com/photo-1604908177522-432c5c7b2c2a?auto=format&fit=crop&w=400&q=80" },
+            { id: 8, name: "Mango Lassi", price: 90, img: "https://images.unsplash.com/photo-1523987355523-c7b5b0723c6a?auto=format&fit=crop&w=400&q=80" },
+            { id: 9, name: "Chicken Tikka", price: 220, img: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=400&q=80" },
+            { id: 10, name: "French Fries", price: 100, img: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80" },
+            { id: 11, name: "Caesar Salad", price: 130, img: "https://images.unsplash.com/photo-1464306076886-debede6b2b24?auto=format&fit=crop&w=400&q=80" },
+            { id: 12, name: "Gulab Jamun", price: 80, img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80" }
+        ];
+
+        // Order now holds objects with quantity
+        let order = {};
+
+        function renderMenu() {
+            const menuDiv = document.getElementById('menu');
+            menuDiv.innerHTML = '';
+            menuItems.forEach(item => {
+                const selected = order[item.id] ? true : false;
+                menuDiv.innerHTML += `
+                    <div class="item">
+                        <img src="${item.img}" alt="${item.name}">
+                        <h4>${item.name}</h4>
+                        <p>₹${item.price}</p>
+                        <button onclick="selectItem(${item.id})" ${selected ? 'style="display:none;"' : ''}>Select</button>
+                        <button class="unselect" onclick="removeItem(${item.id})" ${!selected ? 'style="display:none;"' : ''}>Remove</button>
+                    </div>
+                `;
+            });
+        }
+
+        function selectItem(id) {
+            const item = menuItems.find(item => item.id === id);
+            order[id] = { ...item, quantity: 1 };
+            renderMenu();
+            renderOrder();
+        }
+
+        function removeItem(id) {
+            delete order[id];
+            renderMenu();
+            renderOrder();
+        }
+
+        function increaseQuantity(id) {
+            order[id].quantity += 1;
+            renderOrder();
+        }
+
+        function decreaseQuantity(id) {
+            order[id].quantity -= 1;
+            if (order[id].quantity < 1) {
+                delete order[id];
+                renderMenu();
+            }
+            renderOrder();
+        }
+
+        function renderOrder() {
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = '';
+            let total = 0;
+            Object.values(order).forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                orderList.innerHTML += `
+                    <li>
+                        ${item.name} - ₹${item.price} each 
+                        <button class="qty" onclick="decreaseQuantity(${item.id})">-</button>
+                            ${item.quantity}
+                        <button class="qty" onclick="increaseQuantity(${item.id})">+</button>
+                        = ₹${itemTotal.toFixed(2)}
+                    </li>
+                `;
+            });
+
+            let discount = 0;
+            if (total > 500) {
+                discount = total * 0.10;
+            }
+            let subtotal = total - discount;
+            let gst = subtotal * 0.18;
+            let grandTotal = subtotal + gst;
+
+            const totalsDiv = document.getElementById('totals');
+            totalsDiv.innerHTML = `
+                <span>Total: ₹${total.toFixed(2)}</span>
+                ${discount > 0 ? `<span>Discount (10%): -₹${discount.toFixed(2)}</span>` : ''}
+                <span>GST (18%): ₹${gst.toFixed(2)}</span>
+                <strong>Grand Total: ₹${grandTotal.toFixed(2)}</strong>
+            `;
+
+            if (total > 0) {
+                totalsDiv.innerHTML += `
+                    <div class="payment-options">
+                        <button onclick="processPayment('cash')">Pay Cash</button>
+                        <button onclick="processPayment('online')">Pay Online</button>
+                    </div>
+                `;
+            }
+        }
+
+        function processPayment(method) {
+            const orderData = {
+                order: order,
+                paymentMethod: method,
+                totals: document.getElementById('totals').innerText
+            };
+
+            fetch('/submitOrder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                order = {};
+                renderMenu();
+                renderOrder();
+            })
+            .catch(err => console.error('Error while processing order', err));
+        }
+
+        // Initial render
+        renderMenu();
+        renderOrder();
+    </script>
+    <script>
+function renderOrder() {
+    const orderList = document.getElementById('order-list');
+    orderList.innerHTML = '';
+    let total = 0;
+    Object.values(order).forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        orderList.innerHTML += `
+            <li>
+                ${item.name} - ₹${item.price} each 
+                <button class="qty" onclick="decreaseQuantity(${item.id})">-</button>
+                    ${item.quantity}
+                <button class="qty" onclick="increaseQuantity(${item.id})">+</button>
+                = ₹${itemTotal.toFixed(2)}
+            </li>
+        `;
+    });
+
+    const gst = total * 0.18;
+    let grandTotal = total + gst;
+    let discount = 0;
+    if (grandTotal > 500) {
+        discount = grandTotal * 0.10;
+        grandTotal = grandTotal - discount;
+    }
+    
+    const totalsDiv = document.getElementById('totals');
+    totalsDiv.innerHTML = `
+        <span>Total: ₹${total.toFixed(2)}</span>
+        ${discount > 0 ? `<span>Discount (10%): -₹${discount.toFixed(2)}</span>` : ''}
+        <span>GST (18%): ₹${gst.toFixed(2)}</span>
+        <strong>Grand Total: ₹${grandTotal.toFixed(2)}</strong>
+    `;
+    
+    if (total > 0) {
+        totalsDiv.innerHTML += `
+            <div class="payment-options">
+                <button onclick="processPayment('cash')">Pay Cash</button>
+                <button onclick="processPayment('online')">Pay Online</button>
+            </div>
+        `;
+    }
+}
+</script>
+
+</body>
+</html>
